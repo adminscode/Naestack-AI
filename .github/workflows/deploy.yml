@@ -16,6 +16,11 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Create Resource Group (if not exists)
+        run: |
+          az group show --name naestack-ai-rg || \
+          az group create --name naestack-ai-rg --location eastus
+
       - name: Deploy Bicep Template
         uses: azure/arm-deploy@v1
         with:
