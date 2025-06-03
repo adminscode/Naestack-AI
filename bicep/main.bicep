@@ -8,13 +8,13 @@ param staticWebLocation string = 'centralus'
 param baseName string = 'naestack'
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
-var appServicePlanName = toLower('${baseName}plan${uniqueSuffix}')
-var functionAppName = toLower('${baseName}func${uniqueSuffix}')
-var staticWebAppName = toLower('${baseName}web${uniqueSuffix}')
+var appServicePlanName = toLower('${baseName}-plan-${uniqueSuffix}')
+var functionAppName = toLower('${baseName}-func-${uniqueSuffix}')
+var staticWebAppName = toLower('${baseName}-web-${uniqueSuffix}')
 var cosmosDbAccountName = toLower('${baseName}cosmos${uniqueSuffix}')
-var keyVaultName = toLower('${baseName}kv${uniqueSuffix}')
 var cosmosDbName = 'naestack'
 var cosmosContainerName = 'configs'
+var keyVaultName = toLower('${baseName}kv${uniqueSuffix}')
 
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
@@ -40,14 +40,6 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: 'node'
-        }
-        {
-          name: 'COSMOS_ENDPOINT'
-          value: 'https://${cosmosDb.name}.documents.azure.com:443/'
-        }
-        {
-          name: 'COSMOS_KEY'
-          value: listKeys(cosmosDb.name, cosmosDb.apiVersion).primaryMasterKey
         }
       ]
     }
@@ -85,24 +77,22 @@ resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         isZoneRedundant: false
       }
     ]
-    consistencyPolicy: {
-      defaultConsistencyLevel: 'Session'
-    }
   }
 }
 
 resource cosmosDbSqlDb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
-  name: '${cosmosDb.name}/${cosmosDbName}'
+  name: cosmosDbName
+  parent: cosmosDb
   properties: {
     resource: {
       id: cosmosDbName
     }
   }
-  parent: cosmosDb
 }
 
 resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
-  name: '${cosmosDb.name}/${cosmosDbName}/${cosmosContainerName}'
+  name: cosmosContainerName
+  parent: cosmosDbSqlDb
   properties: {
     resource: {
       id: cosmosContainerName
@@ -112,7 +102,6 @@ resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/con
       }
     }
   }
-  parent: cosmosDbSqlDb
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
