@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -19,7 +20,7 @@ jobs:
       - name: Create Resource Group (if not exists)
         run: |
           az group show --name naestack-ai-rg || \
-          az group create --name naestack-ai-rg --location eastus
+          az group create --name naestack-ai-rg --location centralus
 
       - name: Deploy Bicep Template
         uses: azure/arm-deploy@v1
@@ -27,4 +28,6 @@ jobs:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: naestack-ai-rg
           template: ./bicep/main.bicep
-          parameters: location=eastus baseName=naestack
+          parameters: >
+            location=centralus
+            staticWebLocation=centralus
