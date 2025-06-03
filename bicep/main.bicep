@@ -7,14 +7,14 @@ param staticWebLocation string = 'centralus'
 @description('Base name used for naming resources.')
 param baseName string = 'naestack'
 
-var uniqueId = uniqueString(resourceGroup().id)
-var appServicePlanName = '${baseName}-plan-${uniqueId}'
-var functionAppName = '${baseName}-func-${uniqueId}'
-var staticWebAppName = '${baseName}-web-${uniqueId}'
-var cosmosName = toLower('${baseName}-cosmos-${uniqueId}')
-var keyVaultName = toLower('${baseName}-kv-${uniqueId}')
-var dbName = 'naestack'
-var containerName = 'configs'
+var uniqueSuffix = uniqueString(resourceGroup().id)
+var appServicePlanName = toLower('${baseName}plan${uniqueSuffix}')
+var functionAppName = toLower('${baseName}func${uniqueSuffix}')
+var staticWebAppName = toLower('${baseName}web${uniqueSuffix}')
+var cosmosDbAccountName = toLower('${baseName}cosmos${uniqueSuffix}')
+var keyVaultName = toLower('${baseName}kv${uniqueSuffix}')
+var cosmosDbName = 'naestack'
+var cosmosContainerName = 'configs'
 
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
@@ -41,10 +41,17 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: 'node'
         }
+        {
+          name: 'COSMOS_ENDPOINT'
+          value: 'https://${cosmosDb.name}.documents.azure.com:443/'
+        }
+        {
+          name: 'COSMOS_KEY'
+          value: listKeys(cosmosDb.name, cosmosDb.apiVersion).primaryMasterKey
+        }
       ]
     }
   }
-  dependsOn: [plan]
 }
 
 resource staticWeb 'Microsoft.Web/staticSites@2023-01-01' = {
@@ -66,7 +73,7 @@ resource staticWeb 'Microsoft.Web/staticSites@2023-01-01' = {
 }
 
 resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
-  name: cosmosName
+  name: cosmosDbAccountName
   location: location
   kind: 'GlobalDocumentDB'
   properties: {
@@ -85,31 +92,27 @@ resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
 }
 
 resource cosmosDbSqlDb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
-  name: '${cosmosDb.name}/${dbName}'
+  name: '${cosmosDb.name}/${cosmosDbName}'
   properties: {
     resource: {
-      id: dbName
+      id: cosmosDbName
     }
   }
-  dependsOn: [
-    cosmosDb
-  ]
+  parent: cosmosDb
 }
 
 resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
-  name: '${cosmosDb.name}/${dbName}/${containerName}'
+  name: '${cosmosDb.name}/${cosmosDbName}/${cosmosContainerName}'
   properties: {
     resource: {
-      id: containerName
+      id: cosmosContainerName
       partitionKey: {
-        paths: ['/resourceType']
+        paths: ['/id']
         kind: 'Hash'
       }
     }
   }
-  dependsOn: [
-    cosmosDbSqlDb
-  ]
+  parent: cosmosDbSqlDb
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
@@ -126,5 +129,3 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     enabledForTemplateDeployment: true
   }
 }
-
-output cosmosEndpoint string = cosmosDb.properties.documentEndpoint
