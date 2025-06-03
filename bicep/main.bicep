@@ -1,4 +1,5 @@
 param location string = resourceGroup().location
+param staticWebLocation string = 'eastus2' // MUST be a supported region for Microsoft.Web/staticSites
 param baseName string = 'naestack'
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
@@ -40,7 +41,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
 
 resource staticWeb 'Microsoft.Web/staticSites@2023-01-01' = {
   name: staticWebAppName
-  location: location
+  location: staticWebLocation // ✅ FIXED REGION
   sku: {
     name: 'Free'
     tier: 'Free'
