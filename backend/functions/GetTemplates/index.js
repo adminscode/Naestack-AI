@@ -1,0 +1,1 @@
+// GetTemplates function placeholder

@@ -7,12 +7,14 @@ param staticWebLocation string = 'centralus'
 @description('Base name used for naming resources.')
 param baseName string = 'naestack'
 
-var uniqueSuffix = uniqueString(resourceGroup().id)
-var appServicePlanName = '${baseName}-plan-${uniqueSuffix}'
-var functionAppName = '${baseName}-func-${uniqueSuffix}'
-var staticWebAppName = '${baseName}-web-${uniqueSuffix}'
-var cosmosDbAccountName = toLower('${baseName}cosmos${uniqueSuffix}')
-var keyVaultName = toLower('${baseName}kv${uniqueSuffix}')
+var uniqueId = uniqueString(resourceGroup().id)
+var appServicePlanName = '${baseName}-plan-${uniqueId}'
+var functionAppName = '${baseName}-func-${uniqueId}'
+var staticWebAppName = '${baseName}-web-${uniqueId}'
+var cosmosName = toLower('${baseName}-cosmos-${uniqueId}')
+var keyVaultName = toLower('${baseName}-kv-${uniqueId}')
+var dbName = 'naestack'
+var containerName = 'configs'
 
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
@@ -42,6 +44,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       ]
     }
   }
+  dependsOn: [plan]
 }
 
 resource staticWeb 'Microsoft.Web/staticSites@2023-01-01' = {
@@ -62,8 +65,8 @@ resource staticWeb 'Microsoft.Web/staticSites@2023-01-01' = {
   }
 }
 
-resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
-  name: cosmosDbAccountName
+resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
+  name: cosmosName
   location: location
   kind: 'GlobalDocumentDB'
   properties: {
@@ -75,7 +78,38 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         isZoneRedundant: false
       }
     ]
+    consistencyPolicy: {
+      defaultConsistencyLevel: 'Session'
+    }
   }
+}
+
+resource cosmosDbSqlDb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+  name: '${cosmosDb.name}/${dbName}'
+  properties: {
+    resource: {
+      id: dbName
+    }
+  }
+  dependsOn: [
+    cosmosDb
+  ]
+}
+
+resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  name: '${cosmosDb.name}/${dbName}/${containerName}'
+  properties: {
+    resource: {
+      id: containerName
+      partitionKey: {
+        paths: ['/resourceType']
+        kind: 'Hash'
+      }
+    }
+  }
+  dependsOn: [
+    cosmosDbSqlDb
+  ]
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
@@ -92,3 +126,5 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     enabledForTemplateDeployment: true
   }
 }
+
+output cosmosEndpoint string = cosmosDb.properties.documentEndpoint
