@@ -19,7 +19,7 @@ jobs:
       - name: Create Resource Group (if not exists)
         run: |
           az group show --name naestack-ai-rg || \
-          az group create --name naestack-ai-rg --location eastus
+          az group create --name naestack-ai-rg --location eastus2
 
       - name: Deploy Bicep Template
         uses: azure/arm-deploy@v1
@@ -28,4 +28,5 @@ jobs:
           resourceGroupName: naestack-ai-rg
           template: ./bicep/main.bicep
           parameters: >
-            location=eastus
+            location=eastus2
+            staticWebLocation=eastus2
