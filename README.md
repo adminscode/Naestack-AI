@@ -48,7 +48,7 @@ For leadership reporting, Power BI Embedded delivers rich, interactive dashboard
 ## Tech Stack
 
 - **Frontend:** Azure Static Web Apps (React)
-- **Backend:** Azure Functions (Node.js or .NET), Azure API Management (optional)
+- **Backend:** Azure Functions (Node.js or .NET), Azure API Management
 - **Authentication:** Azure AD B2C
 - **Database:** Azure Cosmos DB (NoSQL) or Azure SQL
 - **Infrastructure as Code:** Bicep / ARM Templates
@@ -125,7 +125,7 @@ For leadership reporting, Power BI Embedded delivers rich, interactive dashboard
   - Status tracking in DB
   - Error handling logic
 
-- **OpenAI Integration:** Optional early error analysis (experimental)
+- **OpenAI Integration:** Early error analysis (experimental)
 
 - **Test:**
   - User config triggers live Azure deployment
