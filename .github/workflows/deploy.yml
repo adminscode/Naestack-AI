@@ -29,6 +29,6 @@ jobs:
           resourceGroupName: naestack-ai-rg
           template: ./bicep/main.bicep
           parameters: |
-            location='centralus'
-            staticWebLocation='centralus'
-            baseName='naestack'
+            location=centralus
+            staticWebLocation=centralus
+            baseName=naestack
